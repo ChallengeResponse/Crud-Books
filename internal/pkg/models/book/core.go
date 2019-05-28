@@ -13,6 +13,13 @@ type BookInfo struct{
 
 func (b BookInfo) FromDb(db *sql.DB, id int) (error){
 	b.id = id;
+	return b.FromDbRow(db.QueryRow("select title, author, publisher, publishDate, rating, status from " + bookTable + " where id = ?", b.id))
+}
+
+func (b BookInfo) FromDbRow(r *interface{Scan(dest ...interface{}) error}) (error){
+	return r.Scan(&b.Title, &b.Author, &b.Publisher, &b.PublishDate, &b.Rating, &b.Status)
+}
+	b.id = id;
 	return db.QueryRow(
 		"select title, author, publisher, publishDate, rating, status from " + bookTable + " where id = ?", 
 		b.id
