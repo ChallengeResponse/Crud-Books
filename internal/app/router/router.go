@@ -7,6 +7,7 @@ import (
 )
 
 type RestFul interface{
+	LinkDb(db *sql.DB)
 	HandleGet(id int, w http.ResponseWriter)
 	HandlePost(w http.ResponseWriter, r *http.Request)
 	HandlePut(id int, w http.ResponseWriter, r *http.Request)
@@ -16,7 +17,7 @@ type RestFul interface{
 
 
 
-func RestFulSplitter(string path, collection RestFul){
+func RestFulSplitter(string path, db *sql.DB, collection RestFul){
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.ParseInt(r.URL.Path[len(path):], 0, 64)
 		if err != nil || id < 0 {
@@ -27,6 +28,10 @@ func RestFulSplitter(string path, collection RestFul){
 			respondWithError(w, 405, "Requested command (" + r.Method + ") not supported on collection. Positive integer item ID required (got '" + r.URL.Path[len(path):] + "').")
 		} else {
 			// id is non-zero or not required
+			// while it won't be used in all subsequent scenarios, it will be in almost all and passing a pointer isn't all that demanding
+			collection.LinkDb(db)
+
+			//Finally! do something specific to each method/verb
 			switch r.Method {
 				case http.MethodGet:
 					// Get all books or a book
