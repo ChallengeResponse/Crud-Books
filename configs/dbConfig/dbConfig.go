@@ -5,6 +5,6 @@ type DbInfo struct{
 	Driver, HostAndPort, DbName, User, Password string
 }
 
-func Main() DbInfo{
-	return DbInfo{"mysql","127.0.0.1:3306","go","root","hellogo"}
+func Main(host string) DbInfo{
+	return DbInfo{"mysql",host + ":3306","go","root","hellogo"}
 }

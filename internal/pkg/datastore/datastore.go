@@ -8,9 +8,9 @@ import (
     _ "github.com/go-sql-driver/mysql"
 )
 
-func Main() (db *sql.DB){
+func Main(host string) (db *sql.DB){
 	//TODO accept an argument to switch between testing/staging/live databases
-	conf := dbConfig.Main()
+	conf := dbConfig.Main(host)
 	//TODO verify conf.driver is a supported (imported here/initialized) driver
 	db, err := sql.Open(conf.Driver, conf.User+":"+conf.Password+"@tcp("+conf.HostAndPort+")/"+conf.DbName)
 	if err != nil {

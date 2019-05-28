@@ -7,7 +7,7 @@ import (
 
 func main(){
 	var tableName string
-	db := datastore.Main()
+	db := datastore.Main("127.0.0.1")
 	defer db.Close()
 	rows, err := db.Query("show tables")
 	if err != nil {
