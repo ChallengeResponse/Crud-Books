@@ -57,18 +57,18 @@ func (r RestBooksStore) HandleGet(id int, w http.ResponseWriter){
 }
 
 // create new, then return a 201 with a location header that points at the new resource
-func (r RestBooksStore) HandlePost(w http.ResponseWriter, req *http.Request){
-
+// per parent router, non-nil error returns will be converted into a response 400 with message
+func (r RestBooksStore) HandlePost(w http.ResponseWriter, req *http.Request) (error){
 }
 
 
-func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, req *http.Request){
+func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, req *http.Request) (error){
 }
 
 
-func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, req *http.Request){
+func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, req *http.Request) (error){
 }
 
 
-func (r RestBooksStore) HandleDelete(id int, w http.ResponseWriter){
+func (r RestBooksStore) HandleDelete(id int, w http.ResponseWriter) (error){
 }
