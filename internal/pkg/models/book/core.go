@@ -34,15 +34,37 @@ func (b BookInfo) FromJson(json []byte) (error){
 	return errors.New("Valid Json, but incomplete or otherwise not within spec for a book.")
 }
 
-func (b BookInfo) SaveToDb(db *sql.DB) (error){
+func (b BookInfo) SaveToDb(db *sql.DB) (id int, error){
 	if b.IsValid(){
+		var sqlStr string
 		if (b.Id > 0){
-			// TODO update (return err from sql call)
+			// If there is an id, saving to the db is assumed to be an update
+			// as b.Id is an integer, it cannot contain any sql commands/injection and
+			// that lets the insert and update commands have the same number of arguments
+			sqlStr = "UPDATE " + bookTable + " SET title = ?, author = ?, publisher = ?, publishDate = ?, rating = ?, status = ? WHERE id = " + strconv.Itoa(b.Id)
+			id = b.Id
 		} else {
-			// TODO insert (return err from sql call)
+			sqlStr = "INSERT INTO " + bookTable + "(title, author, publisher, publishDate, rating, status) VALUES(?,?,?,?,?,?)"
 		}
+		stmt, err := db.Prepare(sqlStr)
+		if err != nil {
+			return 0, err
+		}
+		// TODO Verify, rather than simply assuming, concurrency/thread safety of core db object when looking for LastInsertId
+		res, err := stmt.Exec(b.Title, b.Author, b.Publisher, b.PublishDate, b.Rating, b.Status)
+		if err != nil {
+			return 0, err
+		}
+		if (b.Id == 0){
+			id, err := res.LastInsertId()
+			if err != nil {
+				return 0, err
+			}
+			b.Id = id
+		}
+		return id, nil
 	}
-	return errors.New("Book does not meet spec or is incomplete.")
+	return 0, errors.New("Book does not meet spec or is incomplete.")
 }
 
 //Make sure there's decent/enough info on non-id fields, leave id requirement to other functions

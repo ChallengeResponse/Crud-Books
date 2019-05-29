@@ -1,7 +1,7 @@
 package book
 
 import ( 
-	str "strconv"
+	"strconv"
 	"net/http"
 	"database/sql"
 	"crudBooks/internal/pkg/web"
@@ -20,12 +20,12 @@ func (r RestBooksStore) Init(CollectionUrl string, db *sql.DB){
 func (r RestBooksStore) loadOr404(id int, w http.ResponseWriter) (book BookInfo){
 	err := book.FromDb(r.bookDbConn,id)
 	if err == sql.ErrNoRows{
-		web.RespondWithError(w, 404, "Requested book (" + str.Itoa(id) + ") not found.")
+		web.RespondWithError(w, 404, "Requested book (" + strconv.Itoa(id) + ") not found.")
 		book = nil
 	} else if err != nil{
 		panic(err.Error())
 		//Should consider a 500 e.g.
-		//web.RespondWithError(w, 500, "Internal error while trying to load book (" + str.Itoa(id) + ")." + err.Error())
+		//web.RespondWithError(w, 500, "Internal error while trying to load book (" + strconv.Itoa(id) + ")." + err.Error())
 	}
 	return book
 }
@@ -76,7 +76,7 @@ func (r RestBooksStore) HandlePost(w http.ResponseWriter, body []byte) (error){
 	if err != nil{
 		return err
 	}
-	w.Header().Set("Location", r.collectionUrl + str.Itoa(id))
+	w.Header().Set("Location", r.collectionUrl + strconv.Itoa(id))
 	w.WriteHeader(201)
 	return nil
 }
@@ -115,7 +115,7 @@ func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, body []byte) 
 			return err
 		}
 		if book.Id != id{
-			return errors.New("Cannot change ID. Request included change from " + str.Itoa(id) + "(url) to " + str.Itoa(book.Id) + "(json).")
+			return errors.New("Cannot change ID. Request included change from " + strconv.Itoa(id) + "(url) to " + str.Itoa(book.Id) + "(json).")
 		}
 		id, err := book.SaveToDb(r.bookDbConn)
 		if err != nil{
@@ -128,5 +128,18 @@ func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, body []byte) 
 
 
 func (r RestBooksStore) HandleDelete(id int, w http.ResponseWriter) (error){
-/*
+	// id is an integer, it cannot contain any sql commands/injection
+	res, err := stmt.Exec("DELETE FROM tbl WHERE id = " + strconv.Itoa(b.Id))
+	if err != nil {
+		return err
+	}
+	rowCnt, err := res.RowsAffected()
+	if err != nil {
+		web.RespondWithError(w, 500, "Internal error after deleting book (" + strconv.Itoa(id) + ") " + err.Error())
+	} else if rowCnt = 0 {
+		web.RespondWithError(w, 404, "Requested book (" + strconv.Itoa(id) + ") not found.")
+	} else {
+		w.WriteHeader(204)
+	}
+	return nil
 }
