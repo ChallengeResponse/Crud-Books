@@ -17,19 +17,26 @@ func (r RestBooksStore) Init(CollectionUrl string, db *sql.DB){
 	r.collectionUrl = CollectionUrl
 }
 
+func (r RestBooksStore) loadOr404(id int, w http.ResponseWriter) (book BookInfo){
+	err := book.FromDb(r.bookDbConn,id)
+	if err == sql.ErrNoRows{
+		web.RespondWithError(w, 404, "Requested book (" + str.Itoa(id) + ") not found.")
+		book = nil
+	} else if err != nil{
+		panic(err.Error())
+		//Should consider a 500 e.g.
+		//web.RespondWithError(w, 500, "Internal error while trying to load book (" + str.Itoa(id) + ")." + err.Error())
+	}
+	return book
+}
+
 func (r RestBooksStore) HandleGet(id int, w http.ResponseWriter){
 	// Bad requests (error 400) should have been filtered out already, but 404 may happen for some books
 	books := make([]BookInfo, 0)
 	if (id > 0){
 		// Select by Id
-		var book BookInfo
-		err := book.FromDb(r.bookDbConn,id)
-		if err == sql.ErrNoRows{
-			web.RespondWithError(w, 404, "Requested book (" + str.Itoa(id) + ") not found.")
-			return
-		} else if err != nil{
-			panic(err.Error())
-		} else {
+		book := loadOr404(id, w);
+		if book != nil {
 			books = append(books,book)
 		}
 	} else {
@@ -82,22 +89,17 @@ func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, body []byte) (e
 	if err != nil{
 		return err
 	}
-	err := oldInfo.FromDb(r.bookDbConn,id)
-	if err == sql.ErrNoRows{
-		web.RespondWithError(w, 404, "Requested book (" + str.Itoa(id) + ") not found.")
-		return nil
-	} else if err != nil{
-		web.RespondWithError(w, 500, "Internal error while trying to load book (" + str.Itoa(id) + ")." + err.Error())
-		return nil
+	oldInfo = loadOr404(id, w);
+	if oldInfo != nil {
+		if (newInfo.Id != oldInfo.Id){
+			return errors.New("Resource Id mismatch between json and url.")
+		}
+		id, err := book.SaveToDb(r.bookDbConn)
+		if err != nil{
+			return err
+		}
+		w.WriteHeader(204)
 	}
-	if (newInfo.Id != oldInfo.Id){
-		return errors.New("Resource Id mismatch between json and url.")
-	}
-	id, err := book.SaveToDb(r.bookDbConn)
-	if err != nil{
-		return err
-	}
-	w.WriteHeader(204)
 	return nil
 }
 
