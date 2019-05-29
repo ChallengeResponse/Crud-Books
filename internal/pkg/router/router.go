@@ -35,8 +35,8 @@ func RestFulSplitter(path string, db *sql.DB, collection RestFul) (func(http.Res
 			// id is non-zero or not required
 			// while it won't be used in all subsequent scenarios, it will be in almost all and passing a pointer isn't all that demanding
 			collection.Init(path, db) // TODO send w in there too, rather than in every following call
-			body, err := ioutil.ReadAll(r.Body) //TODO test if empty body returns error.  
-			if err != nil {
+			body, err := ioutil.ReadAll(r.Body)
+			if err == nil {
 				//Finally! do something specific to each method/verb
 				switch r.Method {
 					case http.MethodGet:
