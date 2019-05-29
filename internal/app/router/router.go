@@ -11,9 +11,9 @@ type RestFul interface{
 	//TODO errors should have a custom struct to include the http response code (default 400) and the error message, then the main router could handle all error responses
 	LinkDb(db *sql.DB)
 	HandleGet(id int, w http.ResponseWriter) //bad requests handled prior to call + 404 handled in call = no error to return
-	HandlePost(w http.ResponseWriter, r *http.Request) (error)
-	HandlePut(id int, w http.ResponseWriter, r *http.Request) (error)
-	HandlePatch(id int, w http.ResponseWriter, r *http.Request) (error)
+	HandlePost(w http.ResponseWriter, body []byte) (error)
+	HandlePut(id int, w http.ResponseWriter, body []byte) (error)
+	HandlePatch(id int, w http.ResponseWriter, body []byte) (error)
 	HandleDelete(id int, w http.ResponseWriter) (error)
 }
 
@@ -32,33 +32,36 @@ func RestFulSplitter(path string, db *sql.DB, collection RestFul) (func(http.Res
 		} else {
 			// id is non-zero or not required
 			// while it won't be used in all subsequent scenarios, it will be in almost all and passing a pointer isn't all that demanding
-			collection.LinkDb(db)
-
-			//Finally! do something specific to each method/verb
-			switch r.Method {
-				case http.MethodGet:
-					// Get all books or a book
-					collection.HandleGet(id, w)
-				case http.MethodPost:
-					if id>0{
-						// id is autoincrement, creator cannot set id
-						web.RespondWithError(w, 405, "Cannot control ID of newly created records. Nothing done.")
-					} else {
-						// Create a new book.
-						err = collection.HandlePost(w, r)
-					}
-				case http.MethodPut:
-					// Replace an existing book.
-					err = collection.HandlePut(id, w, r)
-				case http.MethodPatch:
-					// Modify an existing book.
-					err = collection.HandlePatch(id, w, r)
-				case http.MethodDelete:
-					// Delete a book.
-					err = collection.HandleDelete(id, w)
-				default:
-					err = errors.new("Requested command (" + r.Method + ") not supported.")
+			collection.Init(path, db)
+			body, err := ioutil.ReadAll(req.Body) //TODO test if empty body returns error.  
+			if err != nil {
+				//Finally! do something specific to each method/verb
+				switch r.Method {
+					case http.MethodGet:
+						// Get all books or a book
+						collection.HandleGet(id, w)
+					case http.MethodPost:
+						if id>0{
+							// id is autoincrement, creator cannot set id
+							web.RespondWithError(w, 405, "Cannot control ID of newly created records. Nothing done.")
+						} else {
+							// Create a new book.
+							err = collection.HandlePost(w, body)
+						}
+					case http.MethodPut:
+						// Replace an existing book.
+						err = collection.HandlePut(id, w, body)
+					case http.MethodPatch:
+						// Modify an existing book.
+						err = collection.HandlePatch(id, w, body)
+					case http.MethodDelete:
+						// Delete a book.
+						err = collection.HandleDelete(id, w)
+					default:
+						err = errors.new("Requested command (" + r.Method + ") not supported.")
+				}
 			}
+
 		}
 		if (err != nil){
 			// Bad request

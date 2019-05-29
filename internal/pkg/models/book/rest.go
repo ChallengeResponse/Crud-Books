@@ -58,11 +58,7 @@ func (r RestBooksStore) HandleGet(id int, w http.ResponseWriter){
 
 // create new, then return a 201 with a location header that points at the new resource
 // per parent router, non-nil error returns will be converted into a response 400 with message
-func (r RestBooksStore) HandlePost(w http.ResponseWriter, req *http.Request) (error){
-	body, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return err
-	}
+func (r RestBooksStore) HandlePost(w http.ResponseWriter, body []byte) (error){
 	var book BookInfo
 	err := book.FromJson(body)
 	if err != nil{
@@ -77,11 +73,12 @@ func (r RestBooksStore) HandlePost(w http.ResponseWriter, req *http.Request) (er
 }
 
 
-func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, req *http.Request) (error){
+// replace an existing resource.  404 if it does not exist. Return an error if the request is badly formed.
+func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, body []byte) (error){
 }
 
 
-func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, req *http.Request) (error){
+func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, body []byte) (error){
 }
 
 
