@@ -59,6 +59,21 @@ func (r RestBooksStore) HandleGet(id int, w http.ResponseWriter){
 // create new, then return a 201 with a location header that points at the new resource
 // per parent router, non-nil error returns will be converted into a response 400 with message
 func (r RestBooksStore) HandlePost(w http.ResponseWriter, req *http.Request) (error){
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return err
+	}
+	var book BookInfo
+	err := book.FromJson(body)
+	if err != nil{
+		return err
+	}
+	err := book.SaveToDb(r.bookDbConn)
+	if err != nil{
+		return err
+	}
+	// TODO set location header and respond with 201 + empty body
+	return nil
 }
 
 
