@@ -19,10 +19,30 @@ func (b BookInfo) FromDb(db *sql.DB, id int) (error){
 }
 
 func (b BookInfo) FromDbRow(r interface{Scan(dest ...interface{}) error}) (error){
+	// is r still a pointer? Depends on the type implementing the interface? any way to require a pointer?
 	return r.Scan(&b.Title, &b.Author, &b.Publisher, &b.PublishDate, &b.Rating, &b.Status)
 }
 
+func (b BookInfo) FromJson(json []byte) (error){
+	err := json.Unmarshal(json, &b)
+	if (err != nil){
+		return err
+	}
+	if b.IsValid(){
+		return nil
+	}
+	return errors.New("Valid Json, but incomplete or otherwise not within spec for a book.")
+}
+
 func (b BookInfo) SaveToDb(db *sql.DB) (error){
+	if b.IsValid(){
+		if (b.Id > 0){
+			// TODO update (return err from sql call)
+		} else {
+			// TODO insert (return err from sql call)
+		}
+	}
+	return errors.New("Book does not meet spec or is incomplete.")
 }
 
 //Make sure there's decent/enough info on non-id fields, leave id requirement to other functions
