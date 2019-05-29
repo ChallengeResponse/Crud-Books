@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"database/sql"
 	"crudBooks/internal/pkg/web"
+	"io/ioutil"
+	"errors"
 )
 
 type RestFul interface{
@@ -32,8 +34,8 @@ func RestFulSplitter(path string, db *sql.DB, collection RestFul) (func(http.Res
 		} else {
 			// id is non-zero or not required
 			// while it won't be used in all subsequent scenarios, it will be in almost all and passing a pointer isn't all that demanding
-			collection.Init(path, db)
-			body, err := ioutil.ReadAll(req.Body) //TODO test if empty body returns error.  
+			collection.Init(path, db) // TODO send w in there too, rather than in every following call
+			body, err := ioutil.ReadAll(r.Body) //TODO test if empty body returns error.  
 			if err != nil {
 				//Finally! do something specific to each method/verb
 				switch r.Method {
@@ -58,7 +60,7 @@ func RestFulSplitter(path string, db *sql.DB, collection RestFul) (func(http.Res
 						// Delete a book.
 						err = collection.HandleDelete(id, w)
 					default:
-						err = errors.new("Requested command (" + r.Method + ") not supported.")
+						err = errors.New("Requested command (" + r.Method + ") not supported.")
 				}
 			}
 
