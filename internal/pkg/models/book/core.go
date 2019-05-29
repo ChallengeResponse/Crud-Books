@@ -2,6 +2,9 @@ package book
 
 import (
 	"database/sql"
+	"encoding/json"
+	"strconv"
+	"errors"
 )
 
 var bookTable = "books"
@@ -14,7 +17,7 @@ type BookInfo struct{
 }
 
 func (b BookInfo) FromDb(db *sql.DB, id int) (error){
-	b.Id = id;
+	b.Id = id
 	return b.FromDbRow(db.QueryRow("select title, author, publisher, publishDate, rating, status from " + bookTable + " where id = ?", b.Id))
 }
 
@@ -23,8 +26,8 @@ func (b BookInfo) FromDbRow(r interface{Scan(dest ...interface{}) error}) (error
 	return r.Scan(&b.Title, &b.Author, &b.Publisher, &b.PublishDate, &b.Rating, &b.Status)
 }
 
-func (b BookInfo) FromJson(json []byte) (error){
-	err := json.Unmarshal(json, &b)
+func (b BookInfo) FromJson(reqBody []byte) (error){
+	err := json.Unmarshal(reqBody, &b)
 	if (err != nil){
 		return err
 	}
@@ -34,8 +37,9 @@ func (b BookInfo) FromJson(json []byte) (error){
 	return errors.New("Valid Json, but incomplete or otherwise not within spec for a book.")
 }
 
-func (b BookInfo) SaveToDb(db *sql.DB) (id int, error){
+func (b BookInfo) SaveToDb(db *sql.DB) (int, error){
 	if b.IsValid(){
+		var id int
 		var sqlStr string
 		if (b.Id > 0){
 			// If there is an id, saving to the db is assumed to be an update
@@ -56,11 +60,12 @@ func (b BookInfo) SaveToDb(db *sql.DB) (id int, error){
 			return 0, err
 		}
 		if (b.Id == 0){
-			id, err := res.LastInsertId()
+			id64, err := res.LastInsertId()
 			if err != nil {
 				return 0, err
 			}
-			b.Id = id
+			// TODO make sure id not > max of current system's int type... not sure of the go constants
+			b.Id = int(id64)
 		}
 		return id, nil
 	}
