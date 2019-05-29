@@ -104,8 +104,26 @@ func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, body []byte) (e
 }
 
 
+// Supports a send what you need concept rather than deal with application/json-patch+json
 func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, body []byte) (error){
-/*
+	book := loadOr404(id, w)
+	if book != nil {
+		// Unmarshal json onto the already loaded book...
+		// TODO test if this works like a 'send what you need'
+		err := book.FromJson(body)
+		if err != nil{
+			return err
+		}
+		if book.Id != id{
+			return errors.New("Cannot change ID. Request included change from " + str.Itoa(id) + "(url) to " + str.Itoa(book.Id) + "(json).")
+		}
+		id, err := book.SaveToDb(r.bookDbConn)
+		if err != nil{
+			return err
+		}
+		w.WriteHeader(204)
+	}
+	return nil
 }
 
 
