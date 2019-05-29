@@ -13,16 +13,16 @@ func (r RestBooksStore) HandleGet(id int, w http.ResponseWriter){
 	
 }
 
+func (r RestBooksStore) HandlePost(w http.ResponseWriter, req *http.Request){
 
-func (r RestBooksStore) HandlePost(w http.ResponseWriter, r *http.Request){
 }
 
 
-func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, r *http.Request){
+func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, req *http.Request){
 }
 
 
-func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, r *http.Request){
+func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, req *http.Request){
 }
 
 

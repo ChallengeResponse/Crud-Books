@@ -3,6 +3,7 @@ package router
 import ( 
 	"net/http"
 	"strconv"
+	"database/sql"
 	"crudBooks/internal/pkg/web"
 )
 
@@ -17,15 +18,16 @@ type RestFul interface{
 
 
 
-func RestFulSplitter(string path, db *sql.DB, collection RestFul){
+func RestFulSplitter(path string, db *sql.DB, collection RestFul) (func(http.ResponseWriter, *http.Request)){
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := strconv.ParseInt(r.URL.Path[len(path):], 0, 64)
-		if err != nil || id < 0 {
-			id = 0
+		id64, err := strconv.ParseInt(r.URL.Path[len(path):], 0, 32)
+		if err != nil || id64 < 0 {
+			id64 = 0
 		}
+		id := int(id64) // for functions to be called with system int def
 		if id==0 && (r.Method == http.MethodPut || r.Method == http.MethodPatch || r.Method == http.MethodDelete ){
 			// Forbid writes that are to the entire collection
-			respondWithError(w, 405, "Requested command (" + r.Method + ") not supported on collection. Positive integer item ID required (got '" + r.URL.Path[len(path):] + "').")
+			web.RespondWithError(w, 405, "Requested command (" + r.Method + ") not supported on collection. Positive integer item ID required (got '" + r.URL.Path[len(path):] + "').")
 		} else {
 			// id is non-zero or not required
 			// while it won't be used in all subsequent scenarios, it will be in almost all and passing a pointer isn't all that demanding
@@ -39,22 +41,22 @@ func RestFulSplitter(string path, db *sql.DB, collection RestFul){
 				case http.MethodPost:
 					if id>0{
 						// id is autoincrement, creator cannot set id
-						respondWithError(w, 405, "Cannot control ID of newly created records. Nothing done.")
+						web.RespondWithError(w, 405, "Cannot control ID of newly created records. Nothing done.")
 					} else {
 						// Create a new book.
-						HandlePost(w, r)
+						collection.HandlePost(w, r)
 					}
 				case http.MethodPut:
 					// Replace an existing book.
-					HandlePut(id, w, r)
+					collection.HandlePut(id, w, r)
 				case http.MethodPatch:
 					// Modify an existing book.
-					HandlePatch(id, w, r)
+					collection.HandlePatch(id, w, r)
 				case http.MethodDelete:
 					// Delete a book.
-					HandleDelete(id, w)
+					collection.HandleDelete(id, w)
 				default:
-					respondWithError(w, 400, "Requested command (" + r.Method + ") not supported.")
+					web.RespondWithError(w, 400, "Requested command (" + r.Method + ") not supported.")
 			}
 		}
 	}

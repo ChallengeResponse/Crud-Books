@@ -1,8 +1,10 @@
 package book
 
-import "encoding/json"
+import (
+	"database/sql"
+)
 
-bookTable =: "books"
+var bookTable = "books"
 
 type BookInfo struct{
 	Id int
@@ -12,18 +14,12 @@ type BookInfo struct{
 }
 
 func (b BookInfo) FromDb(db *sql.DB, id int) (error){
-	b.id = id;
-	return b.FromDbRow(db.QueryRow("select title, author, publisher, publishDate, rating, status from " + bookTable + " where id = ?", b.id))
+	b.Id = id;
+	return b.FromDbRow(db.QueryRow("select title, author, publisher, publishDate, rating, status from " + bookTable + " where id = ?", b.Id))
 }
 
-func (b BookInfo) FromDbRow(r *interface{Scan(dest ...interface{}) error}) (error){
+func (b BookInfo) FromDbRow(r interface{Scan(dest ...interface{}) error}) (error){
 	return r.Scan(&b.Title, &b.Author, &b.Publisher, &b.PublishDate, &b.Rating, &b.Status)
-}
-	b.id = id;
-	return db.QueryRow(
-		"select title, author, publisher, publishDate, rating, status from " + bookTable + " where id = ?", 
-		b.id
-		).Scan(&b.Title, &b.Author, &b.Publisher, &b.PublishDate, &b.Rating, &b.Status)
 }
 
 func (b BookInfo) SaveToDb(db *sql.DB) (error){
@@ -37,10 +33,10 @@ func (b BookInfo) IsValid() (bool){
 	if (b.Id < 0){
 		return false
 	}
-	if (b.rating > 3 || b.rading < 1){
+	if (b.Rating > 3 || b.Rating < 1){
 		return false
 	}
-	if (strlen(b.author)<1 || strlen(b.title)<1 || strlen(b.publisher) < 1 || strlen(b.publishDate) < 8){
+	if (len(b.Author)<1 || len(b.Title)<1 || len(b.Publisher) < 1 || len(b.PublishDate) < 8){
 		return false
 	}
 	return true
