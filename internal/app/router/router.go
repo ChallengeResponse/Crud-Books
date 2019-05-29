@@ -9,7 +9,7 @@ import (
 
 type RestFul interface{
 	//TODO errors should have a custom struct to include the http response code (default 400) and the error message, then the main router could handle all error responses
-	LinkDb(db *sql.DB)
+	Init(CollectionUrl string, db *sql.DB)
 	HandleGet(id int, w http.ResponseWriter) //bad requests handled prior to call + 404 handled in call = no error to return
 	HandlePost(w http.ResponseWriter, body []byte) (error)
 	HandlePut(id int, w http.ResponseWriter, body []byte) (error)

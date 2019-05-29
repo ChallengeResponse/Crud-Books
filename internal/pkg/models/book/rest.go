@@ -9,12 +9,13 @@ import (
 
 type RestBooksStore struct{
 	bookDbConn *sql.DB
+	string collectionUrl
 }
 
-func (r RestBooksStore) LinkDb(db *sql.DB){
+func (r RestBooksStore) Init(CollectionUrl string, db *sql.DB){
 	r.bookDbConn = db
+	r.collectionUrl = CollectionUrl
 }
-
 
 func (r RestBooksStore) HandleGet(id int, w http.ResponseWriter){
 	// Bad requests (error 400) should have been filtered out already, but 404 may happen for some books
@@ -64,23 +65,48 @@ func (r RestBooksStore) HandlePost(w http.ResponseWriter, body []byte) (error){
 	if err != nil{
 		return err
 	}
-	err := book.SaveToDb(r.bookDbConn)
+	id, err := book.SaveToDb(r.bookDbConn)
 	if err != nil{
 		return err
 	}
-	// TODO set location header and respond with 201 + empty body
+	w.Header().Set("Location", r.collectionUrl + str.Itoa(id))
+	w.WriteHeader(201)
+	return nil
+}
+
+// replace an existing resource.  404 if it does not exist. Return an error if the request is badly formed.
+func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, body []byte) (error){
+	var newInfo, oldInfo BookInfo
+	// first check the request is valid before hitting the database
+	err := newInfo.FromJson(body)
+	if err != nil{
+		return err
+	}
+	err := oldInfo.FromDb(r.bookDbConn,id)
+	if err == sql.ErrNoRows{
+		web.RespondWithError(w, 404, "Requested book (" + str.Itoa(id) + ") not found.")
+		return nil
+	} else if err != nil{
+		web.RespondWithError(w, 500, "Internal error while trying to load book (" + str.Itoa(id) + ")." + err.Error())
+		return nil
+	}
+	if (newInfo.Id != oldInfo.Id){
+		return errors.New("Resource Id mismatch between json and url.")
+	}
+	id, err := book.SaveToDb(r.bookDbConn)
+	if err != nil{
+		return err
+	}
+	w.WriteHeader(204)
 	return nil
 }
 
 
-// replace an existing resource.  404 if it does not exist. Return an error if the request is badly formed.
-func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, body []byte) (error){
-}
-
-
 func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, body []byte) (error){
+/*
 }
 
 
 func (r RestBooksStore) HandleDelete(id int, w http.ResponseWriter) (error){
+/*
 }
