@@ -16,17 +16,18 @@ type BookInfo struct{
 	Status bool
 }
 
-func (b BookInfo) FromDb(db *sql.DB, id int) (error){
+func (b *BookInfo) FromDb(db *sql.DB, id int) (error){
 	b.Id = id
+	//row :=  db.QueryRow("select title, author, publisher, publishDate, rating, status from " + bookTable + " where id = ?", b.Id)
+	//return row.Scan(&b.Title, &b.Author, &b.Publisher, &b.PublishDate, &b.Rating, &b.Status)
 	return b.FromDbRow(db.QueryRow("select title, author, publisher, publishDate, rating, status from " + bookTable + " where id = ?", b.Id))
 }
 
-func (b BookInfo) FromDbRow(r interface{Scan(dest ...interface{}) error}) (error){
-	// is r still a pointer? Depends on the type implementing the interface? any way to require a pointer?
+func (b *BookInfo) FromDbRow(r interface{Scan(dest ...interface{}) error}) (error){
 	return r.Scan(&b.Title, &b.Author, &b.Publisher, &b.PublishDate, &b.Rating, &b.Status)
 }
 
-func (b BookInfo) FromJson(reqBody []byte) (error){
+func (b *BookInfo) FromJson(reqBody []byte) (error){
 	err := json.Unmarshal(reqBody, &b)
 	if (err != nil){
 		return err
@@ -37,7 +38,7 @@ func (b BookInfo) FromJson(reqBody []byte) (error){
 	return errors.New("Valid Json, but incomplete or otherwise not within spec for a book.")
 }
 
-func (b BookInfo) SaveToDb(db *sql.DB) (int, error){
+func (b *BookInfo) SaveToDb(db *sql.DB) (int, error){
 	if b.IsValid(){
 		var id int
 		var sqlStr string
@@ -74,7 +75,7 @@ func (b BookInfo) SaveToDb(db *sql.DB) (int, error){
 
 //Make sure there's decent/enough info on non-id fields, leave id requirement to other functions
 //TODO return error(s) specific to failure reason
-func (b BookInfo) IsValid() (bool){
+func (b *BookInfo) IsValid() (bool){
 	// allowed: a 0 Id (uninitialized) in case an insert is intended
 	// not allowed: sub-zero Id
 	if (b.Id < 0){

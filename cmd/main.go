@@ -29,7 +29,8 @@ func main(){
 	db := datastore.Main("127.0.0.1")
 	defer db.Close()
 	path := "/books/"
-	var collection book.RestBooksStore
-	http.HandleFunc(path, router.RestFulSplitter(path, db, collection))
+	collection := new(book.RestBooksStore)
+	collection.Init(path, db)
+	http.HandleFunc(path, router.RestFulSplitter(collection))
     log.Fatal(http.ListenAndServe(":8080", nil))	
 }
