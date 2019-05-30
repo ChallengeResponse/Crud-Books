@@ -20,6 +20,7 @@ type RestFul interface{
 
 func RestFulSplitter(collection RestFul) (func(http.ResponseWriter, *http.Request)){
 	return func(w http.ResponseWriter, r *http.Request) {
+		var WebErr error
 		id64, err := strconv.ParseInt(r.URL.Path[len(collection.UrlPath()):], 0, 32)
 		if err != nil || id64 < 0 {
 			id64 = 0
@@ -43,23 +44,23 @@ func RestFulSplitter(collection RestFul) (func(http.ResponseWriter, *http.Reques
 							web.RespondWithError(w, 405, "Cannot control ID of newly created records. Nothing done.")
 						} else {
 							// Create a new book.
-							err = collection.HandlePost(body, w)
+							WebErr = collection.HandlePost(body, w)
 						}
 					case http.MethodPut:
 						// Replace an existing book.
-						err = collection.HandlePut(id, body, w)
+						WebErr = collection.HandlePut(id, body, w)
 					case http.MethodPatch:
 						// Modify an existing book.
-						err = collection.HandlePatch(id, body, w)
+						WebErr = collection.HandlePatch(id, body, w)
 					case http.MethodDelete:
 						// Delete a book.
-						err = collection.HandleDelete(id, w)
+						WebErr = collection.HandleDelete(id, w)
 					default:
-						err = errors.New("Requested command (" + r.Method + ") not supported.")
+						WebErr = errors.New("Requested command (" + r.Method + ") not supported.")
 				}
 			}
 		}
-		if (err != nil){
+		if (WebErr != nil){
 			// Bad request
 			web.RespondWithError(w, 400, err.Error());
 		}
