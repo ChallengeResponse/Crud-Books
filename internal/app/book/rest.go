@@ -18,17 +18,20 @@ func (r RestBooksStore) Init(CollectionUrl string, db *sql.DB){
 	r.collectionUrl = CollectionUrl
 }
 
-func (r RestBooksStore) loadOr404(id int, w http.ResponseWriter) (book *BookInfo){
-	err := book.FromDb(r.bookDbConn,id)
+func (r RestBooksStore) loadOr404(id int, db *sql.DB, w http.ResponseWriter) (book *BookInfo){
+	book = nil
+	var bookLoader BookInfo
+	err := bookLoader.FromDb(db,id)
 	if err == sql.ErrNoRows{
 		web.RespondWithError(w, 404, "Requested book (" + strconv.Itoa(id) + ") not found.")
-		book = nil
 	} else if err != nil{
 		panic(err.Error())
 		//Should consider a 500 e.g.
 		//web.RespondWithError(w, 500, "Internal error while trying to load book (" + strconv.Itoa(id) + ")." + err.Error())
+	} else {
+		book = &bookLoader
 	}
-	return book
+	return
 }
 
 func (r RestBooksStore) HandleGet(id int, w http.ResponseWriter){

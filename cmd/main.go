@@ -30,7 +30,6 @@ func main(){
 	defer db.Close()
 	path := "/books/"
 	var collection book.RestBooksStore
-
 	http.HandleFunc(path, router.RestFulSplitter(path, db, collection))
     log.Fatal(http.ListenAndServe(":8080", nil))	
 }
