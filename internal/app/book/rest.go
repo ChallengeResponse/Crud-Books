@@ -34,18 +34,18 @@ func (r RestBooksStore) loadOr404(id int, db *sql.DB, w http.ResponseWriter) (bo
 	return
 }
 
-func (r RestBooksStore) HandleGet(id int, w http.ResponseWriter){
+func (r RestBooksStore) HandleGet(id int, db *sql.DB, w http.ResponseWriter){
 	// Bad requests (error 400) should have been filtered out already, but 404 may happen for some books
 	books := make([]BookInfo, 0)
 	if (id > 0){
 		// Select by Id
-		book := r.loadOr404(id, w);
+		book := r.loadOr404(id, db, w);
 		if book != nil {
 			books = append(books,*book)
 		}
 	} else {
 		//TODO pagination / limit for larger collections
-		rows, err := r.bookDbConn.Query("select * from " + bookTable, 1)
+		rows, err := db.Query("select * from " + bookTable, 1)
 		defer rows.Close() //TODO necessary with no rows or other error?		
 		if err != nil  && err != sql.ErrNoRows{
 			panic(err.Error())
@@ -70,35 +70,35 @@ func (r RestBooksStore) HandleGet(id int, w http.ResponseWriter){
 
 // create new, then return a 201 with a location header that points at the new resource
 // per parent router, non-nil error returns will be converted into a response 400 with message
-func (r RestBooksStore) HandlePost(w http.ResponseWriter, body []byte) (error){
+func (r RestBooksStore) HandlePost(body []byte, db *sql.DB, w http.ResponseWriter) (error){
 	var book BookInfo
 	err := book.FromJson(body)
 	if err != nil{
 		return err
 	}
-	id, err := book.SaveToDb(r.bookDbConn)
+	id, err := book.SaveToDb(db)
 	if err != nil{
 		return err
 	}
-	w.Header().Set("Location", r.collectionUrl + strconv.Itoa(id))
+	w.Header().Set("Location", "./" + strconv.Itoa(id))
 	w.WriteHeader(201)
 	return nil
 }
 
 // replace an existing resource.  404 if it does not exist. Return an error if the request is badly formed.
-func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, body []byte) (error){
+func (r RestBooksStore) HandlePut(id int, body []byte, db *sql.DB, w http.ResponseWriter) (error){
 	var newInfo BookInfo
 	// first check the request is valid before hitting the database
 	err := newInfo.FromJson(body)
 	if err != nil{
 		return err
 	}
-	oldInfo := r.loadOr404(id, w);
+	oldInfo := r.loadOr404(id, db, w);
 	if oldInfo != nil {
 		if (newInfo.Id != oldInfo.Id){
 			return errors.New("Resource Id mismatch between json and url.")
 		}
-		_, err := newInfo.SaveToDb(r.bookDbConn)
+		_, err := newInfo.SaveToDb(db)
 		if err != nil{
 			return err
 		}
@@ -109,8 +109,8 @@ func (r RestBooksStore) HandlePut(id int, w http.ResponseWriter, body []byte) (e
 
 
 // Supports a send what you need concept rather than deal with application/json-patch+json
-func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, body []byte) (error){
-	book := r.loadOr404(id, w)
+func (r RestBooksStore) HandlePatch(id int, body []byte, db *sql.DB, w http.ResponseWriter) (error){
+	book := r.loadOr404(id, db, w)
 	if book != nil {
 		// Unmarshal json onto the already loaded book...
 		// TODO test if this works like a 'send what you need'
@@ -121,7 +121,7 @@ func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, body []byte) 
 		if book.Id != id{
 			return errors.New("Cannot change ID. Request included change from " + strconv.Itoa(id) + "(url) to " + strconv.Itoa(book.Id) + "(json).")
 		}
-		_, err = book.SaveToDb(r.bookDbConn)
+		_, err = book.SaveToDb(db)
 		if err != nil{
 			return err
 		}
@@ -131,9 +131,9 @@ func (r RestBooksStore) HandlePatch(id int, w http.ResponseWriter, body []byte) 
 }
 
 
-func (r RestBooksStore) HandleDelete(id int, w http.ResponseWriter) (error){
+func (r RestBooksStore) HandleDelete(id int, db *sql.DB, w http.ResponseWriter) (error){
 	// id is an integer, it cannot contain any sql commands/injection
-	res, err := r.bookDbConn.Exec("DELETE FROM tbl WHERE id = " + strconv.Itoa(id))
+	res, err := db.Exec("DELETE FROM tbl WHERE id = " + strconv.Itoa(id))
 	if err != nil {
 		return err
 	}
