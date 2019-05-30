@@ -30,8 +30,6 @@ func (r RestBooksStore) loadOr404(id int, w http.ResponseWriter) (book *BookInfo
 		web.RespondWithError(w, 404, "Requested book (" + strconv.Itoa(id) + ") not found.")
 	} else if err != nil{
 		panic(err.Error())
-		//Should consider a 500 e.g.
-		//web.RespondWithError(w, 500, "Internal error while trying to load book (" + strconv.Itoa(id) + ")." + err.Error())
 	} else {
 		book = &bookLoader
 	}
@@ -49,22 +47,24 @@ func (r RestBooksStore) HandleGet(id int, w http.ResponseWriter){
 		}
 	} else {
 		//TODO pagination / limit for larger collections
-		rows, err := r.db.Query("select * from " + bookTable, 1)
-		defer rows.Close() //TODO necessary with no rows or other error?		
-		if err != nil  && err != sql.ErrNoRows{
-			panic(err.Error())
-		} else if err == nil || err == sql.ErrNoRows{
-			for rows.Next() {
-				var book BookInfo
-				err := book.FromDbRow(rows)
+		rows, err := r.db.Query("select * from " + bookTable)
+		defer rows.Close() //TODO necessary with no rows or other error?
+		if err != sql.ErrNoRows{
+			if err != nil{
+				panic(err.Error())
+			} else { // err == nil
+				for rows.Next() {
+					var book BookInfo
+					err := book.FromDbRow(rows)
+					if err != nil {
+						panic(err.Error())
+					}
+					books = append(books,book)
+				}
+				err = rows.Err()
 				if err != nil {
 					panic(err.Error())
 				}
-				books = append(books,book)
-			}
-			err = rows.Err()
-			if err != nil {
-				panic(err.Error())
 			}
 		} // else  err == sql.ErrNoRows, but books is already an empty slice
 	}

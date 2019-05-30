@@ -21,7 +21,7 @@ myRun $curl $target/
 myRun $curl $target/1
 
 #fail to create book
-myRun $curl -X POST -H "Content-Type: application/json" -d @incomplete_patch.json $target/1
+myRun $curl -X POST -H "Content-Type: application/json" -d @incomplete_patch.json $target/
 
 #fail to create book (trying to demand a specific ID be set)
 myRun $curl -X POST -H "Content-Type: application/json" -d @replace_book.json $target/1

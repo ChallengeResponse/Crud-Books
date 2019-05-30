@@ -17,14 +17,11 @@ type BookInfo struct{
 }
 
 func (b *BookInfo) FromDb(db *sql.DB, id int) (error){
-	b.Id = id
-	//row :=  db.QueryRow("select title, author, publisher, publishDate, rating, status from " + bookTable + " where id = ?", b.Id)
-	//return row.Scan(&b.Title, &b.Author, &b.Publisher, &b.PublishDate, &b.Rating, &b.Status)
-	return b.FromDbRow(db.QueryRow("select title, author, publisher, publishDate, rating, status from " + bookTable + " where id = ?", b.Id))
+	return b.FromDbRow(db.QueryRow("select id, title, author, publisher, publishDate, rating, status from " + bookTable + " where id = ?", id))
 }
 
 func (b *BookInfo) FromDbRow(r interface{Scan(dest ...interface{}) error}) (error){
-	return r.Scan(&b.Title, &b.Author, &b.Publisher, &b.PublishDate, &b.Rating, &b.Status)
+	return r.Scan(&b.Id, &b.Title, &b.Author, &b.Publisher, &b.PublishDate, &b.Rating, &b.Status)
 }
 
 func (b *BookInfo) FromJson(reqBody []byte) (error){
@@ -40,14 +37,12 @@ func (b *BookInfo) FromJson(reqBody []byte) (error){
 
 func (b *BookInfo) SaveToDb(db *sql.DB) (int, error){
 	if b.IsValid(){
-		var id int
 		var sqlStr string
 		if (b.Id > 0){
 			// If there is an id, saving to the db is assumed to be an update
 			// as b.Id is an integer, it cannot contain any sql commands/injection and
 			// that lets the insert and update commands have the same number of arguments
 			sqlStr = "UPDATE " + bookTable + " SET title = ?, author = ?, publisher = ?, publishDate = ?, rating = ?, status = ? WHERE id = " + strconv.Itoa(b.Id)
-			id = b.Id
 		} else {
 			sqlStr = "INSERT INTO " + bookTable + "(title, author, publisher, publishDate, rating, status) VALUES(?,?,?,?,?,?)"
 		}
@@ -68,7 +63,7 @@ func (b *BookInfo) SaveToDb(db *sql.DB) (int, error){
 			// TODO make sure id not > max of current system's int type... not sure of the go constants
 			b.Id = int(id64)
 		}
-		return id, nil
+		return b.Id, nil
 	}
 	return 0, errors.New("Book does not meet spec or is incomplete.")
 }
