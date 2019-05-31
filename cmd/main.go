@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"net/http"
 	"crudBooks/internal/pkg/datastore"
 	"crudBooks/internal/pkg/router"
@@ -26,7 +27,7 @@ func main(){
 		- Status (CheckedIn, CheckedOut)
 	*/
 	// container parent address = host.docker.internal
-	db := datastore.Main("127.0.0.1")
+	db := datastore.Main(os.Args[1])
 	defer db.Close()
 	path := "/books/"
 	collection := new(book.RestBooksStore)

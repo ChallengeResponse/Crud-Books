@@ -1,9 +1,18 @@
 FROM golang:alpine as builder
-RUN mkdir /build 
-COPY . /build
-WORKDIR /build/cmd
+#Creating things and copying to them seperately is probably not required,
+#  but things weren't working until the docker cache was cleared and now
+#  I am not going to change it back because it does work (and it would
+#  be easy to get just the mysql driver instead of somebody's entire
+#  set of github packages)
+RUN mkdir -p /build/src/crudBooks && mkdir /build/src/github.com
+COPY crudBooks /build/src/crudBooks
+COPY github.com /build/src/github.com
+#RUN find /build/src | grep -v '\.git' > /dev/stderr
+WORKDIR /build/src/crudBooks/cmd
+ENV GOPATH /build
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o main .
 FROM scratch
-COPY --from=builder /build/cmd/main /app/
+COPY --from=builder /build/src/crudBooks/cmd/main /app/
 WORKDIR /app
-CMD ["./main"]
+#Change the ip address below to the database server (or set up the image to take a command line argument? surely it can be done)
+CMD ["./main","172.17.0.1"]
