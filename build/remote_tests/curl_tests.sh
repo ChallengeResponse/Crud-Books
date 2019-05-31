@@ -34,7 +34,7 @@ fi
 
 if [ "$2" == "-q" ]; then
     currMd5=`$0 $1 --no-truncate | md5sum`
-    [ "$currMd5" == "339e3170d7dacdfcf9f4af85be2e0086  -" ] && echo "Tests passed" || echo "Tests differ, got $currMd5, run without -q"
+    [ "$currMd5" == "248484bcc34158c768d60403ecac89ff  -" ] && echo "Tests passed" || echo "Tests differ, got $currMd5, run without -q"
 else
     #empty list of books
     myRun $curl $target/

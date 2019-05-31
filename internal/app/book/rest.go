@@ -42,9 +42,10 @@ func (r RestBooksStore) HandleGet(id int, w http.ResponseWriter){
 	if (id > 0){
 		// Select by Id
 		book := r.loadOr404(id, w);
-		if book != nil {
-			books = append(books,*book)
+		if book == nil {
+			return
 		}
+		books = append(books,*book)
 	} else {
 		//TODO pagination / limit for larger collections
 		rows, err := r.db.Query("select * from " + bookTable)
