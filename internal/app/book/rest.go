@@ -117,7 +117,6 @@ func (r RestBooksStore) HandlePatch(id int, body []byte, w http.ResponseWriter) 
 	book := r.loadOr404(id, w)
 	if book != nil {
 		// Unmarshal json onto the already loaded book...
-		// TODO test if this works like a 'send what you need'
 		err := book.FromJson(body)
 		if err != nil{
 			return err
@@ -137,7 +136,7 @@ func (r RestBooksStore) HandlePatch(id int, body []byte, w http.ResponseWriter) 
 
 func (r RestBooksStore) HandleDelete(id int, w http.ResponseWriter) (error){
 	// id is an integer, it cannot contain any sql commands/injection
-	res, err := r.db.Exec("DELETE FROM tbl WHERE id = " + strconv.Itoa(id))
+	res, err := r.db.Exec("DELETE FROM " + bookTable + " WHERE id = " + strconv.Itoa(id))
 	if err != nil {
 		return err
 	}
